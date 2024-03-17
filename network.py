@@ -101,7 +101,7 @@ class TransformerBlock(nn.Module):
 
 
 class SSLI(nn.Module): 
-    def __init__(self, in_channels=8, hidden=768, n_layers=12, attn_heads=12, out_channel=7, dropout=0):
+    def __init__(self, in_channels=7, hidden=256, n_layers=4, attn_heads=8, out_channel=7, dropout=0.2):
         super().__init__()
         self.hidden = hidden
         self.n_layers = n_layers
@@ -109,11 +109,12 @@ class SSLI(nn.Module):
 
         self.feed_forward_hidden = hidden * 4
 
-        self.embedding = nn.Sequential(
+        self.encoding = nn.Sequential(
             nn.Linear(in_channels, hidden),
             nn.ReLU(),
             nn.Linear(hidden, hidden)
         )
+        self.pos_encoding = nn.Embedding(122, hidden)
 
         self.transformer_blocks = nn.ModuleList(
             [TransformerBlock(hidden, attn_heads, hidden * 4, dropout) for _ in range(n_layers)])
@@ -126,7 +127,9 @@ class SSLI(nn.Module):
 
     def forward(self, x):
         mask = (x[:,:,-1] != x[:,:,-1].min()).unsqueeze(1).repeat(1, x.size(1), 1).unsqueeze(1)
-        x = self.embedding(x[:,:,:-1])
+        x = self.encoding(x[:,:,:-1])
+        pos = torch.arange(0, x.size(1)).unsqueeze(0).repeat(x.size(0), 1).to(x.device)
+        x = self.pos_encoding(pos) + x
         for transformer in self.transformer_blocks:
             x = transformer.forward(x, mask)
         return self.fc(x)
