@@ -1,2 +1,2 @@
 # SSLI
- Reconstructing seamless harmonized Landsat Sentinel-2 (HLS) time series using self-supervised learning
+ Reconstruction of seamless harmonized Landsat Sentinel-2 (HLS) time series via self-supervised learning
